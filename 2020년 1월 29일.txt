@@ -1,0 +1,93 @@
+Semantic Segmentation : 각자 픽셀별로, 이 픽셀이 문맥적으로 어디에 속하는가?, 형상인식까지 가능
+
+Classification Localization : 분류, 위치포착
+
+Object Detection : 물체 인식
+
+Instance Segmentation : 각각의 Object를 찾은 후 그것을 Segmentation 하는것(어디에 속하는지 찾는것)
+
+
+
+Semantic Segmentation의 한계 : 겹쳐 있을 경우, 각각의 개체에 대해서 식별불가 
+최근에 하는것 : 포즈 인식까지
+
+You Only Look Once
+
+R-CNN은 region proposal이라는 수백개의 이미지 후보를 생성하고, 각각에 대해서 분류, YOLO는 격자 그리드로 나누어 한번에 클래스를 판단하고 이를 통합해 최종 객체를 구분, 기존의 방법들과 달리 Object Detection을 이미지 픽셀 좌표에 대응되는 bounding box를 찾음
+그리고 이에 대한 class 확률을 구하는 Single Regression Problem으로 해결
+
+픽셀 단위로, 개냐, 고양이로 구분
+
+Input 이미지를 S*S grid로 분할(해당 셀의 물체의 중심위치로 가정)
+cell은 B개의 바운딩 박스와 각 객체 존재에 대한 Confidence Score로 구성
+Cell은 C개의 클래스 확률로 구성 박스
+결과적으로 마지막 Prediction layer은 S * S * (B * 5 + C) 사이즈가 된다.
+
+v1 : 448*448*3의 이미지가 network를 통과하여, 7*7*30의 텐서로 출력
+v2 : 416*416*3의 이미지가 network를 통과하여 13*13*25의 텐서로 출력
+
+각셀마다, 사각형의 좌표, 물체일 확률, 각 클래스별 확률
+txtytwthpop1p2p3 *  B
+
+txtytwth : 위치
+pn : 개일확률, 고양이일 확률.... 클래스일 확률
+
+confidence : 오브젝트일 확률 : 객체일 확률
+
+나중에 confidence가 낮은 애들은 제거해주어야 한다.
+Sliding Window를 이용하면, 한 픽셀을 기준으로 할때, 특정 객체라고 하여 여러번 추정됨
+다수의 Bounding Box가 있는데, 이를 융합해서 대표값 하나만 검출해야하는 문제가 있음(평균을 이용)
+하지만, 단순 평균을 이용하면, 부수적인 문제(한계점 : 여러 면에서 찍어 포착한다. 두 사람의 얼굴이 붙어있다.
+)가 발생
+
+YOLO에서는 이 문제를 두가지 방법으로 해결
+1.Thresholding by Confidence score : confidence가 낮은것을 버린다.
+2.None-Maximam Suppression
+
+YOLO가 해주는것은 여기까지
+
+
+
+각셀을 균등하게 분류, 각셀에는 x,y,w,h,c 한셀당 85개
+507개에 대한 Bounding Box, YOLO버전 3에서는 한 픽셀당 바운드박스 3개를 사용,
+YOLO버전 2는 바운드박스 2개
+
+두번째는 2028개, 셀을 26*26으로 나누었다. 더 정교하게 2배로 나누었다.
+세번째는 또 2배 굉장히 잘게 나누었다. 각 셀당 Bounding Box 3개로 나누었다.
+
+
+
+만약 다음과 같은 픽셀값에서 코너를 검출한다고 할때
+20 30 40
+50 70 10
+50 20 00
+대표값은 70
+절대값을 기준으로 하는것이 아니라, 주변보다 상대적으로 높냐낮냐로 구분을 해야한다.
+
+만약, 다음과 같이 주어졌때
+
+20 30 40 20 50 10
+50 70 10 20 80 10
+50 20 00 10 10 10
+
+이럴때는 대표값이 80이 된다.
+
+
+
+R-CNN은 region proposal이라는 수백개의 이미지 후보를 생성하고 각각에 대해서 분류 YOLO는
+격자 그리드로 나누어 한번에 클래스를 판단하고, 이를 통합해 최종 객체를 구분 기존의 방법들과 달리 Object detection을 이미지 픽셀 좌표에 대응되는 Boundary box를 찾음 그리고 이에 대한 class 확률을 구하는 Single Regression Problem으로 해결
+
+뭔소리냐?
+만약 개의 다리의 일부가 입력으로 주어지면, 어느 클래스에 해당하는지 해결하는것
+
+#Ex)이자율 올라가면, 주식이 떨어진다.
+
+
+이자율 0.12 일때 6.00
+0.18일때, 6.15
+0.20일때?
+
+이게 Regression 문제이다.
+
+*모든 신경망 알고리즘은 경사하강법!
+장점이자 단점, 조금씩 이동하니 시간이 오래걸린다.
